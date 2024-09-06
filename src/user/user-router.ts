@@ -1,16 +1,12 @@
-import { Router } from 'express';
+import express from 'express';
 import UserController from './user-controller';
 import UserService from './user-service';
 
-//in order to provide our frontend with the user data, we need to specify user routes
-
-const userRouter = Router();
-
+const router = express.Router();
 const userService = new UserService();
 const userController = new UserController(userService);
 
-userRouter.get('/users/', userController.getUsers);
-userRouter.post('/users/', userController.createUser);
-userRouter.get('/users/:id', userController.getUserById);
+router.post('/register', (req, res) => userController.createUser(req, res));
+router.post('/login', (req, res) => userController.login(req, res));
 
-export default userRouter;
+export default router;

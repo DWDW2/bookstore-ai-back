@@ -1,41 +1,25 @@
 import { CreateUserDto } from './dtos/CreateUser.dto';
-import { User } from './types/response';
+import User, {IUser} from './models/User';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
-// this user service instance shows how to create a user, get a user by id, and get all users with in-memory data
 class UserService {
-  usersInDatabase: User[] = [
-    {
-      id: 1,
-      email: 'albkfil@gmail.com',
-      username: 'alibackend',
-    },
-    {
-      id: 2,
-      email: 'bazarjackson@gmail.com',
-      username: 'bazarjackson',
-    },
-    {
-      id: 3,
-      email: 'samaltman@gmail.com',
-      username: 'openaiceo',
-    },
-  ];
-
-  getUserById(id: number): User | null {
-    return this.usersInDatabase.find((user) => user.id === id) || null;
-  }
-  getUsers(): User[] {
-    return this.usersInDatabase;
-  }
-
-  createUser(userDto: CreateUserDto): User {
-    const newUser: User = {
-      id: 4,
+  async createUser(userDto: CreateUserDto): Promise<IUser> {
+    const hashedPassword = await bcrypt.hash(userDto.password, 10);
+    const newUser = new User({
       email: userDto.email,
       username: userDto.username || 'user',
-    };
-    this.usersInDatabase.push(newUser);
-    return newUser;
+      password: hashedPassword,
+    });
+    return await newUser.save();
+  }
+
+  async login(email: string, password: string): Promise<string | null> {
+    const user = await User.findOne({ email });
+    if (user && await bcrypt.compare(password, user.password)) {
+      return jwt.sign({ userId: user._id }, process.env.JWT_SECRET!, { expiresIn: '1h' });
+    }
+    return null;
   }
 }
 

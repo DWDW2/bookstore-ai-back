@@ -1,8 +1,6 @@
-import { CreateUserDto } from './dtos/CreateUser.dto';
-import UserService from './user-service';
 import { Request, Response } from 'express';
+import UserService from './user-service';
 
-// a user controller is a class that handles the user routes (incoming frontend requests)
 class UserController {
   private userService: UserService;
 
@@ -10,39 +8,28 @@ class UserController {
     this.userService = userService;
   }
 
-  createUser = (req: Request, res: Response) => {
+  async createUser(req: Request, res: Response) {
     try {
-      const user: CreateUserDto = req.body;
-      const newUser = this.userService.createUser(user);
-      res.status(201).json(newUser);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      const user = await this.userService.createUser(req.body);
+      res.status(201).json({ id: user._id, email: user.email, username: user.username });
+    } catch (error) {
+      res.status(400).json({ error: 'Failed to create user' });
     }
-  };
+  }
 
-  getUsers = (req: Request, res: Response) => {
+  async login(req: Request, res: Response) {
     try {
-      const users = this.userService.getUsers();
-      res.status(200).json(users);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  };
-
-  getUserById = (req: Request, res: Response) => {
-    try {
-      const params = req.params;
-      const id = parseInt(params.id);
-      const user = this.userService.getUserById(id);
-      if (!user) {
-        res.status(404).json({ error: 'User not found' });
+      const { email, password } = req.body;
+      const token = await this.userService.login(email, password);
+      if (token) {
+        res.json({ token });
       } else {
-        res.status(200).json(user);
+        res.status(401).json({ error: 'Invalid credentials' });
       }
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+    } catch (error) {
+      res.status(400).json({ error: 'Login failed' });
     }
-  };
+  }
 }
 
 export default UserController;
